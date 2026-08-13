@@ -5,7 +5,9 @@
 
 > 语言 / Language：**[中文](./README.md)** · **[English](./README.en.md)** · **[参与贡献](./CONTRIBUTING.md)**
 
-> 在线演示 / Live Demo：**[https://ctrl-master.github.io/henan-flood-early-warning/](https://ctrl-master.github.io/henan-flood-early-warning/)**（GitHub Pages 自动发布 `demo/`）
+> 在线演示 / Live Demo：**[https://ctrl-master.github.io/henan-flood-early-warning/](https://ctrl-master.github.io/henan-flood-early-warning/)**（GitHub Pages，手动同步 `demo/` 的快照）
+>
+> 说明：Demo 的地图与图表库（Leaflet / ECharts）已**自托管**在仓库内，不再依赖任何外部 CDN，因此在线预览与下载后本地运行都能稳定加载。底图瓦片需联网（已配置 OSM → CartoDB → 高德 三级备用源，全部不可达时自动降级为暗色面板 + 监测点标记）。
 
 ---
 
