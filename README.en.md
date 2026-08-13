@@ -20,7 +20,6 @@
 - Something you should use to make real evacuation decisions, or a replacement for official warnings from the meteorological / water-resources authorities.
 
 > For the full, serious liability and legal disclaimer, read **[DISCLAIMER.md](./DISCLAIMER.md)** — please do so first.
-> Short version: open-sourcing does not transfer liability. If you misuse it, the responsibility is yours.
 
 ---
 
