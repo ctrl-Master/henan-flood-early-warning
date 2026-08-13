@@ -20,3 +20,6 @@ Thumbs.db
 tmp/
 dist/
 build/
+
+# ===== 其他独立项目（非本仓库内容，勿提交） =====
+policy-matcher/
