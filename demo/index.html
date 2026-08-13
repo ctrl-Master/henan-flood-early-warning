@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>河南省中东部防汛与台风极端降雨监控预警系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* ========== 全局变量 ========== */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1e2a3d;
+            --border-color: #2a3a52;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --blue: #3b82f6;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --red: #ef4444;
+            --green: #22c55e;
+            --cyan: #06b6d4;
+            --purple: #8b5cf6;
+        }
+
+        /* ========== 重置与基础 ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a4a62; }
+
+        /* ========== 主布局 ========== */
+        .app-container {
+            display: grid;
+            grid-template-rows: 56px 1fr 200px;
+            height: 100vh;
+        }
+
+        /* ========== 顶栏 ========== */
+        .topbar {
+            background: linear-gradient(135deg, #0d1526 0%, #15203a 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .topbar-logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .topbar-logo .logo-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .topbar-logo .logo-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: rgba(59,130,246,0.15);
+            border-radius: 4px;
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+        .topbar-status {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .status-dot.warning { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+        .status-dot.alarm { background: var(--red); box-shadow: 0 0 8px var(--red); }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .topbar-time {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--cyan);
+            letter-spacing: 1px;
+        }
+        .alert-banner {
+            background: linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: #fca5a5;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ========== 中间内容区 ========== */
+        .content-area {
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 1px;
+            background: var(--border-color);
+            overflow: hidden;
+        }
+
+        /* ========== 左侧面板 ========== */
+        .left-panel {
+            background: var(--bg-secondary);
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .panel-section {
+            margin-bottom: 16px;
+        }
+        .panel-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-title .badge {
+            background: rgba(239,68,68,0.2);
+            color: #fca5a5;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        /* 城市卡片 */
+        .city-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .city-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--blue);
+        }
+        .city-card.active {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 1px var(--cyan);
+        }
+        .city-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+        }
+        .city-card[data-level="red"]::before { background: var(--red); }
+        .city-card[data-level="orange"]::before { background: var(--orange); }
+        .city-card[data-level="yellow"]::before { background: var(--yellow); }
+        .city-card[data-level="blue"]::before { background: var(--blue); }
+        .city-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .city-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .city-dfri {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+        .city-card[data-level="red"] .city-dfri { color: var(--red); }
+        .city-card[data-level="orange"] .city-dfri { color: var(--orange); }
+        .city-card[data-level="yellow"] .city-dfri { color: var(--yellow); }
+        .city-card[data-level="blue"] .city-dfri { color: var(--blue); }
+        .city-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .city-meta span { display: flex; align-items: center; gap: 3px; }
+        .level-tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .level-tag.red { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        .level-tag.orange { background: rgba(249,115,22,0.2); color: #fdba74; }
+        .level-tag.yellow { background: rgba(234,179,8,0.2); color: #fde047; }
+        .level-tag.blue { background: rgba(59,130,246,0.2); color: #93c5fd; }
+
+        /* 监测站列表 */
+        .monitor-list {
+            list-style: none;
+        }
+        .monitor-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+        .monitor-item:hover {
+            background: var(--bg-card-hover);
+        }
+        .monitor-item .station-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .monitor-item .station-icon {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .monitor-item .station-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        .monitor-item.warn { border-color: rgba(234,179,8,0.3); }
+        .monitor-item.alarm { border-color: rgba(239,68,68,0.3); }
+
+        /* DFRI 分量条 */
+        .dfri-breakdown {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .dfri-bar-row {
+            margin-bottom: 8px;
+        }
+        .dfri-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+        .dfri-bar-label .label-name { color: var(--text-secondary); }
+        .dfri-bar-label .label-value { font-family: 'Courier New', monospace; font-weight: 600; }
+        .dfri-bar-track {
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .dfri-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+
+        /* ========== 中间地图区 ========== */
+        .center-panel {
+            background: var(--bg-primary);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        #map {
+            flex: 1;
+            background: #0d1117;
+        }
+        .map-overlay-top {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            z-index: 500;
+            pointer-events: none;
+        }
+        .map-tool-btn {
+            pointer-events: auto;
+            background: rgba(26,35,50,0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(10px);
+        }
+        .map-tool-btn:hover {
+            background: rgba(30,42,61,0.95);
+            border-color: var(--blue);
+            color: var(--text-primary);
+        }
+        .map-tool-btn.active {
+            background: rgba(59,130,246,0.2);
+            border-color: var(--blue);
+            color: #93c5fd;
+        }
+        .map-legend {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(26,35,50,0.92);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            z-index: 500;
+            backdrop-filter: blur(10px);
+            font-size: 11px;
+        }
+        .legend-title {
+            color: var(--text-muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .map-info-card {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(26,35,50,0.92);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 500;
+            backdrop-filter: blur(10px);
+            max-width: 280px;
+            display: none;
+        }
+        .map-info-card.show { display: block; }
+        .map-info-card .info-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .map-info-card .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .map-info-card .info-row .key { color: var(--text-muted); }
+        .map-info-card .info-row .val { font-family: 'Courier New', monospace; font-weight: 600; }
+
+        /* ========== 右侧面板 ========== */
+        .right-panel {
+            background: var(--bg-secondary);
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .risk-gauge-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .gauge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .gauge-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        #riskGauge { width: 100%; height: 160px; }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .metric-card .metric-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .metric-card .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+        .metric-card .metric-unit {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+        .metric-card .metric-trend {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+        .metric-trend.up { color: var(--red); }
+        .metric-trend.down { color: var(--green); }
+        .metric-trend.stable { color: var(--text-muted); }
+
+        /* 预警事件列表 */
+        .warning-list {
+            list-style: none;
+        }
+        .warning-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--blue);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .warning-item.red { border-left-color: var(--red); }
+        .warning-item.orange { border-left-color: var(--orange); }
+        .warning-item.yellow { border-left-color: var(--yellow); }
+        .warning-item .warning-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .warning-item .warning-title {
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .warning-item .warning-time {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .warning-item .warning-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* ========== 底部图表区 ========== */
+        .bottom-panel {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            background: var(--border-color);
+        }
+        .chart-container {
+            background: var(--bg-secondary);
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .chart-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .chart-body {
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Leaflet 暗色主题覆盖 */
+        .leaflet-container {
+            background: #0d1117 !important;
+        }
+        .leaflet-tile {
+            filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.9);
+        }
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+        }
+        .leaflet-popup-tip {
+            background: var(--bg-card) !important;
+        }
+        
+        /* 自定义标记 */
+        .risk-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .risk-marker.red { background: var(--red); animation: marker-pulse-red 2s infinite; }
+        .risk-marker.orange { background: var(--orange); }
+        .risk-marker.yellow { background: var(--yellow); color: #1a1a1a; }
+        .risk-marker.blue { background: var(--blue); }
+        @keyframes marker-pulse-red {
+            0%, 100% { box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+            50% { box-shadow: 0 0 20px rgba(239,68,68,0.8); }
+        }
+
+        /* 降雨热力圆 */
+        .rain-circle {
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        /* 模态弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 720px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        .modal-close:hover { color: var(--text-primary); }
+        .modal-body {
+            padding: 20px;
+        }
+        .sim-result-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .sim-result-table th, .sim-result-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sim-result-table th {
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+        .sim-result-table td { font-family: 'Courier New', monospace; }
+        .sim-result-table tr:hover { background: var(--bg-card); }
+
+        /* 按钮 */
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn:hover { background: var(--bg-card-hover); border-color: var(--blue); }
+        .btn-primary {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff;
+        }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.3);
+            color: #fca5a5;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 9999;
+            white-space: nowrap;
+            display: none;
+        }
+
+        /* ========== 高级功能按钮 ========== */
+        .func-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .func-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 4px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .func-btn:hover { border-color: var(--blue); color: var(--text-primary); background: var(--bg-card-hover); }
+
+        /* 数据质量条 */
+        .quality-row { margin-bottom: 10px; }
+        .quality-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
+        .quality-label .q-name { color: var(--text-secondary); }
+        .quality-label .q-val { font-family: 'Courier New', monospace; font-weight: 600; }
+        .quality-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+        .quality-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+        /* 解释条 */
+        .explain-bar-row { margin-bottom: 12px; }
+        .explain-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+        .explain-track { height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden; }
+        .explain-fill { height: 100%; border-radius: 5px; }
+        .interval-box {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px; margin-bottom: 14px;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center;
+        }
+        .interval-box .ib-item .ib-val { font-size: 18px; font-weight: 700; font-family: 'Courier New', monospace; }
+        .interval-box .ib-item .ib-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        /* 时间轴 / 路线图 */
+        .roadmap-timeline { position: relative; padding-left: 22px; }
+        .roadmap-timeline::before { content: ''; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: var(--border-color); }
+        .phase-item { position: relative; margin-bottom: 20px; }
+        .phase-item::before { content: ''; position: absolute; left: -19px; top: 4px; width: 11px; height: 11px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .phase-item .phase-title { font-size: 14px; font-weight: 600; }
+        .phase-item .phase-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(59,130,246,0.15); color: #93c5fd; margin-left: 8px; }
+        .phase-item .phase-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.6; }
+        .phase-item .phase-meta b { color: var(--text-secondary); font-weight: 600; }
+
+        /* 复盘项 */
+        .review-item { font-size: 12px; color: var(--text-secondary); padding: 7px 0; border-bottom: 1px solid var(--border-color); }
+
+        /* API 表格 */
+        .api-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .api-table th, .api-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .api-table th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 10px; }
+        .api-table td { font-family: 'Courier New', monospace; }
+        .code-pill { font-family: 'Courier New', monospace; background: rgba(139,92,246,0.15); color: #c4b5fd; padding: 1px 6px; border-radius: 4px; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- ===== 顶栏 ===== -->
+        <div class="topbar">
+            <div class="topbar-logo">
+                <div class="logo-icon">水</div>
+                <div>
+                    <span class="logo-text">河南省中东部防汛与台风极端降雨监控预警系统</span>
+                    <span class="logo-sub">v1.0</span>
+                </div>
+            </div>
+            <div class="alert-banner">
+                <span>⚠</span>
+                <span id="alertText">郑州沙口路下穿隧道 橙色预警 · 常庄水库超汛限3.30m</span>
+            </div>
+            <div class="topbar-status">
+                <div class="status-item"><div class="status-dot online"></div> 数据采集正常</div>
+                <div class="status-item"><div class="status-dot alarm"></div> 活跃预警: 3</div>
+                <div class="status-item"><div class="status-dot online"></div> 模型引擎在线</div>
+                <div class="topbar-time" id="currentTime">2026-08-13 08:00:00</div>
+            </div>
+        </div>
+
+        <!-- ===== 内容区 ===== -->
+        <div class="content-area">
+            <!-- 左侧面板 -->
+            <div class="left-panel">
+                <!-- 三城风险概览 -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <span>三城风险概览</span>
+                        <span class="badge">3 活跃</span>
+                    </div>
+                    <div class="city-card active" data-city="郑州" data-level="orange" onclick="selectCity('郑州')">
+                        <div class="city-card-header">
+                            <span class="city-name">郑州市</span>
+                            <span class="city-dfri">0.501</span>
+                        </div>
+                        <div class="city-meta">
+                            <span class="level-tag orange">橙色</span>
+                            <span>📍 沙口路</span>
+                            <span>🌧 65mm/h</span>
+                        </div>
+                    </div>
+                    <div class="city-card" data-city="许昌" data-level="yellow" onclick="selectCity('许昌')">
+                        <div class="city-card-header">
+                            <span class="city-name">许昌市</span>
+                            <span class="city-dfri">0.342</span>
+                        </div>
+                        <div class="city-meta">
+                            <span class="level-tag yellow">黄色</span>
+                            <span>📍 魏都区</span>
+                            <span>🌧 38mm/h</span>
+                        </div>
+                    </div>
+                    <div class="city-card" data-city="漯河" data-level="blue" onclick="selectCity('漯河')">
+                        <div class="city-card-header">
+                            <span class="city-name">漯河市</span>
+                            <span class="city-dfri">0.218</span>
+                        </div>
+                        <div class="city-meta">
+                            <span class="level-tag blue">蓝色</span>
+                            <span>📍 沙澧河</span>
+                            <span>🌧 25mm/h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DFRI 分量 -->
+                <div class="panel-section">
+                    <div class="panel-title"><span>DFRI 风险分量</span></div>
+                    <div class="dfri-breakdown" id="dfriBreakdown">
+                        <div class="dfri-bar-row">
+                            <div class="dfri-bar-label">
+                                <span class="label-name">降雨加权 (w=0.40)</span>
+                                <span class="label-value" style="color: var(--red)">0.553</span>
+                            </div>
+                            <div class="dfri-bar-track">
+                                <div class="dfri-bar-fill" style="width: 55.3%; background: linear-gradient(90deg, var(--blue), var(--red))"></div>
+                            </div>
+                        </div>
+                        <div class="dfri-bar-row">
+                            <div class="dfri-bar-label">
+                                <span class="label-name">地形汇水 (w=0.20)</span>
+                                <span class="label-value" style="color: var(--orange)">0.784</span>
+                            </div>
+                            <div class="dfri-bar-track">
+                                <div class="dfri-bar-fill" style="width: 78.4%; background: linear-gradient(90deg, var(--blue), var(--orange))"></div>
+                            </div>
+                        </div>
+                        <div class="dfri-bar-row">
+                            <div class="dfri-bar-label">
+                                <span class="label-name">水库承压 (w=0.20)</span>
+                                <span class="label-value" style="color: var(--yellow)">0.149</span>
+                            </div>
+                            <div class="dfri-bar-track">
+                                <div class="dfri-bar-fill" style="width: 14.9%; background: linear-gradient(90deg, var(--blue), var(--yellow))"></div>
+                            </div>
+                        </div>
+                        <div class="dfri-bar-row">
+                            <div class="dfri-bar-label">
+                                <span class="label-name">人口承灾 (w=0.20)</span>
+                                <span class="label-value" style="color: var(--orange)">0.466</span>
+                            </div>
+                            <div class="dfri-bar-track">
+                                <div class="dfri-bar-fill" style="width: 46.6%; background: linear-gradient(90deg, var(--blue), var(--orange))"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 关键监测站 -->
+                <div class="panel-section">
+                    <div class="panel-title"><span>关键监测站</span></div>
+                    <ul class="monitor-list">
+                        <li class="monitor-item alarm">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--red)"></div>
+                                常庄水库
+                            </div>
+                            <div class="station-value" style="color: var(--red)">131.30m</div>
+                        </li>
+                        <li class="monitor-item alarm">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--red)"></div>
+                                沙口路隧道
+                            </div>
+                            <div class="station-value" style="color: var(--red)">积水0.35m</div>
+                        </li>
+                        <li class="monitor-item warn">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--yellow)"></div>
+                                颍河许昌站
+                            </div>
+                            <div class="station-value" style="color: var(--yellow)">74.20m</div>
+                        </li>
+                        <li class="monitor-item">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--blue)"></div>
+                                白龟山水库
+                            </div>
+                            <div class="station-value">105.80m</div>
+                        </li>
+                        <li class="monitor-item">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--blue)"></div>
+                                沙河漯河站
+                            </div>
+                            <div class="station-value">60.50m</div>
+                        </li>
+                        <li class="monitor-item">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--green)"></div>
+                                澧河漯河站
+                            </div>
+                            <div class="station-value">58.20m</div>
+                        </li>
+                        <li class="monitor-item">
+                            <div class="station-name">
+                                <div class="station-icon" style="background: var(--blue)"></div>
+                                紫荆山地铁站
+                            </div>
+                            <div class="station-value">正常</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 高级分析功能 -->
+                <div class="panel-section">
+                    <div class="panel-title"><span>高级分析功能</span><span class="badge">专家增强</span></div>
+                    <div class="func-grid">
+                        <button class="func-btn" onclick="openModal('qualityModal')">📊 数据质量</button>
+                        <button class="func-btn" onclick="openModal('ensembleModal')">🎲 集合推演</button>
+                        <button class="func-btn" onclick="openModal('explainModal')">🔍 风险解释</button>
+                        <button class="func-btn" onclick="openModal('roadmapModal')">🗺 路线图</button>
+                        <button class="func-btn" onclick="openModal('reviewModal')">✅ 预警复盘</button>
+                        <button class="func-btn" onclick="openModal('apiModal')">🔐 API规范</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间地图区 -->
+            <div class="center-panel">
+                <div id="map"></div>
+                <div class="map-overlay-top">
+                    <button class="map-tool-btn active" onclick="switchLayer('risk')">🎨 风险热力图</button>
+                    <button class="map-tool-btn" onclick="switchLayer('rain')">🌧 降雨分布</button>
+                    <button class="map-tool-btn" onclick="switchLayer('flood')">🌊 淹没推演</button>
+                    <button class="map-tool-btn" onclick="switchLayer('evac')">🚶 撤离路线</button>
+                    <button class="map-tool-btn" onclick="openSimulation()">▶ 洪水推演模拟</button>
+                    <button class="map-tool-btn" onclick="openEvacuation()">🛣 撤离路线规划</button>
+                </div>
+                <div class="map-legend">
+                    <div class="legend-title">风险等级</div>
+                    <div class="legend-row"><div class="legend-color" style="background: var(--blue)"></div> 蓝色 · 低风险 (DFRI&lt;0.25)</div>
+                    <div class="legend-row"><div class="legend-color" style="background: var(--yellow)"></div> 黄色 · 中风险 (0.25-0.45)</div>
+                    <div class="legend-row"><div class="legend-color" style="background: var(--orange)"></div> 橙色 · 高风险 (0.45-0.70)</div>
+                    <div class="legend-row"><div class="legend-color" style="background: var(--red)"></div> 红色 · 极高风险 (≥0.70)</div>
+                </div>
+                <div class="map-info-card" id="mapInfoCard">
+                    <div class="info-title">
+                        <span id="infoTitle">监测点详情</span>
+                        <span class="level-tag" id="infoLevel">蓝色</span>
+                    </div>
+                    <div id="infoBody"></div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <div class="right-panel">
+                <!-- DFRI 仪表盘 -->
+                <div class="risk-gauge-container">
+                    <div class="gauge-header">
+                        <span class="gauge-title" id="gaugeCity">郑州 · 综合风险指数</span>
+                        <span class="level-tag orange" id="gaugeLevel">橙色</span>
+                    </div>
+                    <div id="riskGauge"></div>
+                </div>
+
+                <!-- 关键指标 -->
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">1h降雨量</div>
+                        <div class="metric-value" style="color: var(--red)">65.0<span class="metric-unit">mm</span></div>
+                        <div class="metric-trend up">↑ 较前1h +22mm</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">24h累计</div>
+                        <div class="metric-value" style="color: var(--orange)">180.0<span class="metric-unit">mm</span></div>
+                        <div class="metric-trend up">↑ 持续上升</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">水库水位</div>
+                        <div class="metric-value" style="color: var(--red)">131.3<span class="metric-unit">m</span></div>
+                        <div class="metric-trend up">↑ 超汛限3.30m</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">入库流量</div>
+                        <div class="metric-value" style="color: var(--orange)">850<span class="metric-unit">m³/s</span></div>
+                        <div class="metric-trend up">↑ +150 m³/s</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">管网利用率</div>
+                        <div class="metric-value" style="color: var(--red)">145<span class="metric-unit">%</span></div>
+                        <div class="metric-trend up">↑ 超载45%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">影响人口</div>
+                        <div class="metric-value" style="color: var(--orange)">5.0<span class="metric-unit">万</span></div>
+                        <div class="metric-trend up">↑ 持续增加</div>
+                    </div>
+                </div>
+
+                <!-- 预警事件 -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <span>活跃预警事件</span>
+                        <span class="badge">4</span>
+                    </div>
+                    <ul class="warning-list">
+                        <li class="warning-item red">
+                            <div class="warning-header">
+                                <span class="warning-title">常庄水库极度承压</span>
+                                <span class="warning-time">08:00</span>
+                            </div>
+                            <div class="warning-desc">超汛限3.30m，承压度0.402，入库850m³/s，建议加大泄洪至750m³/s</div>
+                        </li>
+                        <li class="warning-item orange">
+                            <div class="warning-header">
+                                <span class="warning-title">沙口路短时强降雨</span>
+                                <span class="warning-time">08:00</span>
+                            </div>
+                            <div class="warning-desc">1h降雨65mm，3h累计95mm，管网超载145%，隧道积水0.35m</div>
+                        </li>
+                        <li class="warning-item orange">
+                            <div class="warning-header">
+                                <span class="warning-title">排水管网超载</span>
+                                <span class="warning-time">07:55</span>
+                            </div>
+                            <div class="warning-desc">沙口路泵站3号泵故障，实际抽排4.2m³/s（设计5.0），管网利用率145%</div>
+                        </li>
+                        <li class="warning-item orange">
+                            <div class="warning-header">
+                                <span class="warning-title">DFRI综合风险高</span>
+                                <span class="warning-time">08:00</span>
+                            </div>
+                            <div class="warning-desc">DFRI=0.501，主要风险因子: 降雨(0.553) + 地形(0.784)</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 应急资源 -->
+                <div class="panel-section">
+                    <div class="panel-title"><span>应急资源</span></div>
+                    <div class="metric-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="metric-card">
+                            <div class="metric-label">抢险队伍</div>
+                            <div class="metric-value" style="color: var(--cyan)">8<span class="metric-unit">支</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">移动泵车</div>
+                            <div class="metric-value" style="color: var(--cyan)">12<span class="metric-unit">台</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">沙袋库存</div>
+                            <div class="metric-value" style="color: var(--cyan)">5000<span class="metric-unit">个</span></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">避难容量</div>
+                            <div class="metric-value" style="color: var(--cyan)">1.2<span class="metric-unit">万人</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 底部图表区 ===== -->
+        <div class="bottom-panel">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">降雨量趋势 (24h)</span>
+                </div>
+                <div class="chart-body" id="rainfallChart"></div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">水库/河道水位趋势</span>
+                </div>
+                <div class="chart-body" id="waterLevelChart"></div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">DFRI 风险指数变化</span>
+                </div>
+                <div class="chart-body" id="dfriChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：洪水推演 ===== -->
+    <div class="modal-overlay" id="simModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🌊 洪水推演模拟</span>
+                <button class="modal-close" onclick="closeModal('simModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">推演时长</label>
+                        <select class="form-select" id="simHours">
+                            <option value="3">未来 3 小时</option>
+                            <option value="6" selected>未来 6 小时</option>
+                            <option value="12">未来 12 小时</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模型类型</label>
+                        <select class="form-select" id="simModel">
+                            <option value="ca">格点水量平衡(CA)</option>
+                            <option value="muskingum">马斯京根演进</option>
+                            <option value="2d">二维水动力</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">预报1h降雨 (mm)</label>
+                        <input class="form-input" id="simRain1h" type="number" value="45" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">预报3h降雨 (mm)</label>
+                        <input class="form-input" id="simRain3h" type="number" value="120" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">常庄水库泄洪 (m³/s)</label>
+                        <input class="form-input" id="simOutflow1" type="number" value="750" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">白龟山水库泄洪 (m³/s)</label>
+                        <input class="form-input" id="simOutflow2" type="number" value="900" />
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="runSimulation()" style="width: 100%; margin-bottom: 16px;">▶ 开始推演</button>
+                <div id="simResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：撤离路线 ===== -->
+    <div class="modal-overlay" id="evacModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🛣 撤离路线规划</span>
+                <button class="modal-close" onclick="closeModal('evacModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">出发地</label>
+                        <select class="form-select" id="evacFrom">
+                            <option value="ZZ-SK">郑州沙口路区域</option>
+                            <option value="XC-WB">许昌魏都区</option>
+                            <option value="LH-YH" selected>漯河源汇区滞洪区</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">撤离人数</label>
+                        <input class="form-input" id="evacPop" type="number" value="2100" />
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="runEvacuation()" style="width: 100%; margin-bottom: 16px;">🛣 生成路线</button>
+                <div id="evacResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：数据质量看板 ===== -->
+    <div class="modal-overlay" id="qualityModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">📊 数据质量看板 (DQS)</span>
+                <button class="modal-close" onclick="closeModal('qualityModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">
+                    Q<sub>i</sub>∈[0,1]：缺失率/时效/跳变/传感器状态综合评分。&lt;0.4 自动降权并提升人工复核优先级。
+                </div>
+                <div id="qualityBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：情景集合推演 ===== -->
+    <div class="modal-overlay" id="ensembleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🎲 情景集合洪水演进</span>
+                <button class="modal-close" onclick="closeModal('ensembleModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">基础泄洪峰值 (m³/s)</label>
+                        <input class="form-input" id="ensBase" type="number" value="750" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">下游警戒水位 (m)</label>
+                        <input class="form-input" id="ensWarn" type="number" value="75.5" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">泄洪方案附加量 (m³/s, 逗号分隔)</label>
+                        <input class="form-input" id="ensRelease" type="text" value="0,200,400" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">降雨洪峰附加 (m³/s, 逗号分隔)</label>
+                        <input class="form-input" id="ensRain" type="text" value="0,150,300" />
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="runEnsemble()" style="width:100%;margin-bottom:16px;">🎲 运行集合推演</button>
+                <div id="ensembleResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：风险解释 ===== -->
+    <div class="modal-overlay" id="explainModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🔍 DFRI 风险解释与不确定性</span>
+                <button class="modal-close" onclick="closeModal('explainModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+                    概率化DFRI（蒙特卡洛3000次）· 郑州沙口路网格 · 含数据质量因子 Q<sub>i</sub>
+                </div>
+                <div class="interval-box">
+                    <div class="ib-item"><div class="ib-val" style="color:var(--orange)" id="exPoint">0.477</div><div class="ib-label">点估计</div></div>
+                    <div class="ib-item"><div class="ib-val" style="color:var(--blue)" id="exP5">0.405</div><div class="ib-label">5%分位</div></div>
+                    <div class="ib-item"><div class="ib-val" style="color:var(--red)" id="exP95">0.549</div><div class="ib-label">95%分位</div></div>
+                </div>
+                <div id="explainBody"></div>
+                <div style="margin-top:12px;font-size:11px;color:var(--text-muted);" id="exPlainText">
+                    主要驱动因子：<b style="color:var(--red)">降雨</b> · 区间宽度 0.144（置信度：中）· 当某分项 Q<sub>i</sub>&lt;0.4 时该因子权重自动降权，预警标注"数据置信度低"。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：分阶段路线图 ===== -->
+    <div class="modal-overlay" id="roadmapModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🗺 分阶段落地路线图</span>
+                <button class="modal-close" onclick="closeModal('roadmapModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="roadmap-timeline">
+                    <div class="phase-item">
+                        <div class="phase-title">Phase 1 · MVP<span class="phase-tag">3-4个月</span></div>
+                        <div class="phase-meta">
+                            <b>范围</b>：郑州核心区 + 常庄水库 + 重点下穿/地铁站<br>
+                            <b>交付</b>：基础DFRI + 简化马斯京根 + 四级预警 + 大屏/APP<br>
+                            <b>验收</b>：7·20回放 CSI≥0.75、端到端延迟&lt;60s<br>
+                            <b>资源</b>：算法1+前端1+数据1；服务器2台
+                        </div>
+                    </div>
+                    <div class="phase-item">
+                        <div class="phase-title">Phase 2 · 三城联动<span class="phase-tag">6-8个月</span></div>
+                        <div class="phase-meta">
+                            <b>范围</b>：许昌/漯河接入 + 完整水库-河道-城区联动<br>
+                            <b>交付</b>：联动预警 + 集合推演 + 数据质量体系 + 基础ML订正<br>
+                            <b>验收</b>：三城联动时延&lt;5min、超警概率输出可用<br>
+                            <b>资源</b>：+水利建模1人；边缘节点3套
+                        </div>
+                    </div>
+                    <div class="phase-item">
+                        <div class="phase-title">Phase 3 · 全域智能化<span class="phase-tag">4个月+</span></div>
+                        <div class="phase-meta">
+                            <b>范围</b>：集合预报 / 可解释AI / 数字孪生 / 跨部门<br>
+                            <b>交付</b>：数字孪生回放 + 复盘 + 韧性 + 跨部门交换<br>
+                            <b>验收</b>：压测达标 + 可观测全量 + 灾备演练通过<br>
+                            <b>资源</b>：+ML工程师1人；异地备份节点
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：预警复盘 ===== -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">✅ 预警复盘报告</span>
+                <button class="modal-close" onclick="closeModal('reviewModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="review-item"><b>事件ID</b>：EVT-2026-0813-ZZ</div>
+                <div class="review-item"><b>触发时间</b>：08:00 · <b>峰值等级</b>：橙色</div>
+                <div class="review-item"><b>实际影响</b>：沙口路下穿隧道积水0.35m，管网超载145%</div>
+                <div class="review-item"><b>预警准确率</b>：POD 0.90 / FAR 0.10 / CSI 0.818 / 提前量 42min</div>
+                <div class="review-item"><b>闭环</b>：复合触发（持续性2步+空间一致性）通过；解除需连续3步下降且关键监测点回落</div>
+                <div class="review-item" style="border-bottom:none;"><b>经验条目</b>：<br>① 数据质量低的分项已自动降权，建议加强该站运维<br>② 空间连续性过滤后误报下降<br>③ 下一步引入集合预报降低区间宽度</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态弹窗：API规范 ===== -->
+    <div class="modal-overlay" id="apiModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">🔐 API 安全与规范</span>
+                <button class="modal-close" onclick="closeModal('apiModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                    <div class="metric-card"><div class="metric-label">鉴权</div><div class="metric-value" style="font-size:12px;color:var(--cyan)">OAuth2/JWT</div></div>
+                    <div class="metric-card"><div class="metric-label">限流</div><div class="metric-value" style="font-size:12px;color:var(--cyan)">100 req/s</div></div>
+                    <div class="metric-card"><div class="metric-label">幂等</div><div class="metric-value" style="font-size:12px;color:var(--cyan)">Idempotency-Key</div></div>
+                    <div class="metric-card"><div class="metric-label">Webhook</div><div class="metric-value" style="font-size:12px;color:var(--cyan)">签名+退避重试</div></div>
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">标准错误码</div>
+                <table class="api-table">
+                    <thead><tr><th>code</th><th>含义</th></tr></thead>
+                    <tbody>
+                        <tr><td>0</td><td>成功</td></tr>
+                        <tr><td>4001</td><td>参数缺失/非法</td></tr>
+                        <tr><td>4003</td><td>幂等键冲突</td></tr>
+                        <tr><td>4010</td><td>未授权/令牌失效</td></tr>
+                        <tr><td>4030</td><td>无 scope 权限</td></tr>
+                        <tr><td>4290</td><td>触发限流</td></tr>
+                        <tr><td>5001</td><td>引擎内部异常</td></tr>
+                        <tr><td>5030</td><td>降级模式(数据源中断)</td></tr>
+                    </tbody>
+                </table>
+                <div style="margin-top:12px;font-size:11px;color:var(--text-muted);">
+                    新增接口：<span class="code-pill">/risk/explain</span> <span class="code-pill">/simulation/ensemble</span>
+                    <span class="code-pill">/data/quality</span> <span class="code-pill">/replay/{id}</span>
+                    <span class="code-pill">/warning/review</span> <span class="code-pill">/warning/lifecycle</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        // ========================================
+        // 模拟数据
+        // ========================================
+        const CITY_DATA = {
+            '郑州': {
+                center: [34.75, 113.65], zoom: 11,
+                dfri: 0.501, level: 'orange', levelText: '橙色',
+                rainfall_1h: 65, rainfall_24h: 180,
+                reservoir_level: 131.3, reservoir_warning: 128.0,
+                inflow: 850, outflow: 300, pipe_util: 1.45,
+                population: 50000,
+                stations: [
+                    {id: 'ZZ-CZ-001', name: '常庄水库', lon: 113.5421, lat: 34.7589, type: 'reservoir', level: 'red',
+                     data: {水位: '131.30m', 汛限: '128.00m', 超汛限: '3.30m', 入库: '850 m³/s', 出库: '300 m³/s', 承压度: '0.402'}},
+                    {id: 'ZZ-SK-001', name: '沙口路下穿隧道', lon: 113.6312, lat: 34.7567, type: 'underpass', level: 'orange',
+                     data: {积水深度: '0.35m', 管网利用率: '145%', 泵站状态: '部分运行(3号泵故障)', 排水能力: '4.2/8.5 m³/s', 隧道状态: '影响通行'}},
+                    {id: 'ZZ-ZJS-001', name: '紫荆山地铁站', lon: 113.6789, lat: 34.7623, type: 'subway', level: 'blue',
+                     data: {站内状态: '正常', 入口积水: '0.0m', 防汛挡板: '4块已安装', 日客流: '12万人次', 毗邻风险: '沙口路隧道(800m)'}},
+                ]
+            },
+            '许昌': {
+                center: [34.02, 113.85], zoom: 11,
+                dfri: 0.342, level: 'yellow', levelText: '黄色',
+                rainfall_1h: 38, rainfall_24h: 120,
+                reservoir_level: 105.8, reservoir_warning: 104.0,
+                inflow: 1200, outflow: 600, pipe_util: 0.95,
+                population: 8500,
+                stations: [
+                    {id: 'XC-BGS-001', name: '白龟山水库', lon: 113.0892, lat: 33.8721, type: 'reservoir', level: 'blue',
+                     data: {水位: '105.80m', 汛限: '104.00m', 超汛限: '1.80m', 入库: '1200 m³/s', 出库: '600 m³/s', 承压度: '0.286'}},
+                    {id: 'XC-YH-001', name: '颍河许昌站', lon: 113.8523, lat: 34.0398, type: 'river', level: 'blue',
+                     data: {水位: '74.20m', 警戒: '75.50m', 保证: '77.00m', 流量: '850 m³/s', 最大过流: '2800 m³/s', 超警: '-1.30m(未超)'}},
+                    {id: 'XC-WB-001', name: '魏都区老城区', lon: 113.8221, lat: 34.0256, type: 'urban', level: 'yellow',
+                     data: {人口密度: '12500人/km²', 管网年限: '25年', 管网状况: '一般', 泵站: '满负荷运行', 历史积水: '5次', 撤离路线: '2条已规划'}},
+                ]
+            },
+            '漯河': {
+                center: [33.58, 114.02], zoom: 11,
+                dfri: 0.218, level: 'blue', levelText: '蓝色',
+                rainfall_1h: 25, rainfall_24h: 95,
+                reservoir_level: 60.5, reservoir_warning: 62.0,
+                inflow: 1500, outflow: 1500, pipe_util: 0.60,
+                population: 11360,
+                stations: [
+                    {id: 'LH-SLH-001', name: '沙澧河交汇处', lon: 114.0215, lat: 33.5812, type: 'confluence', level: 'blue',
+                     data: {沙河水位: '60.50m', 澧河水位: '58.20m', 汇合水位: '60.80m', 沙河流量: '1500 m³/s', 澧河流量: '320 m³/s', 北堤高: '65.50m'}},
+                    {id: 'LH-YH-001', name: '源汇区滞洪区', lon: 114.0523, lat: 33.5421, type: 'retention', level: 'blue',
+                     data: {面积: '35.5km²', 设计容量: '5000万m³', 当前蓄量: '0', 人口: '11360人', 村庄: '4个', 农作物: '夏玉米(拔节期)'}},
+                    {id: 'LH-SH-001', name: '沙河漯河站', lon: 114.0156, lat: 33.5856, type: 'river', level: 'blue',
+                     data: {水位: '60.50m', 警戒: '62.00m', 保证: '64.00m', 流量: '1500 m³/s', 最大过流: '4200 m³/s', 超警: '-1.50m(未超)'}},
+                ]
+            }
+        };
+
+        const LEVEL_COLORS = {
+            red: '#ef4444', orange: '#f97316', yellow: '#eab308', blue: '#3b82f6'
+        };
+
+        let currentCity = '郑州';
+        let map, markers = [];
+        let rainfallChart, waterLevelChart, dfriChart, riskGauge;
+
+        // ========================================
+        // 地图初始化
+        // ========================================
+        function initMap() {
+            map = L.map('map', {
+                center: [34.52, 113.85],
+                zoom: 9,
+                zoomControl: false,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18
+            }).addTo(map);
+
+            L.control.zoom({position: 'topright'}).addTo(map);
+            
+            // 添加三城标记和监测站
+            addAllMarkers();
+        }
+
+        function addAllMarkers() {
+            // 清除旧标记
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            Object.entries(CITY_DATA).forEach(([city, data]) => {
+                data.stations.forEach(st => {
+                    const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div class="risk-marker ${st.level}">${st.name.charAt(0)}</div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                    
+                    const marker = L.marker([st.lat, st.lon], {icon}).addTo(map);
+                    marker.on('click', () => showStationInfo(st, city));
+                    markers.push(marker);
+                });
+            });
+
+            // 添加三城连接线（洪水传播路径）
+            const floodPath = [
+                [34.7589, 113.5421], // 常庄水库
+                [34.7567, 113.6312], // 沙口路
+                [34.0398, 113.8523], // 颍河许昌
+                [33.5812, 114.0215], // 沙澧河漯河
+            ];
+            L.polyline(floodPath, {
+                color: '#ef4444',
+                weight: 2,
+                opacity: 0.5,
+                dashArray: '10, 5'
+            }).addTo(map);
+            markers.push(L.polyline(floodPath, {color: '#ef4444', weight: 2, opacity: 0.5, dashArray: '10, 5'}));
+        }
+
+        function showStationInfo(station, city) {
+            const card = document.getElementById('mapInfoCard');
+            document.getElementById('infoTitle').textContent = station.name;
+            const levelEl = document.getElementById('infoLevel');
+            levelEl.textContent = {red:'红色', orange:'橙色', yellow:'黄色', blue:'蓝色'}[station.level];
+            levelEl.className = `level-tag ${station.level}`;
+            
+            let html = `<div class="info-row"><span class="key">城市</span><span class="val">${city}</span></div>`;
+            html += `<div class="info-row"><span class="key">类型</span><span class="val">${{reservoir:'水库', underpass:'下穿隧道', subway:'地铁站', river:'河道', urban:'城区', confluence:'河交汇', retention:'滞洪区'}[station.type]}</span></div>`;
+            Object.entries(station.data).forEach(([k, v]) => {
+                html += `<div class="info-row"><span class="key">${k}</span><span class="val">${v}</span></div>`;
+            });
+            document.getElementById('infoBody').innerHTML = html;
+            card.classList.add('show');
+        }
+
+        // ========================================
+        // 城市选择
+        // ========================================
+        function selectCity(city) {
+            currentCity = city;
+            document.querySelectorAll('.city-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.city === city);
+            });
+
+            const data = CITY_DATA[city];
+            map.flyTo(data.center, data.zoom, {duration: 1});
+            
+            updateGauge(data);
+            updateMetrics(data);
+            updateDFRIBars(data);
+        }
+
+        function updateGauge(data) {
+            document.getElementById('gaugeCity').textContent = `${currentCity} · 综合风险指数`;
+            const levelEl = document.getElementById('gaugeLevel');
+            levelEl.textContent = data.levelText;
+            levelEl.className = `level-tag ${data.level}`;
+
+            riskGauge.setOption({
+                series: [{
+                    data: [{
+                        value: data.dfri,
+                        itemStyle: { color: LEVEL_COLORS[data.level] }
+                    }]
+                }]
+            });
+        }
+
+        function updateMetrics(data) {
+            // 更新右侧指标卡（简化版）
+            const cards = document.querySelectorAll('.right-panel .metric-grid .metric-card');
+            if (cards.length >= 6) {
+                cards[0].querySelector('.metric-value').innerHTML = `${data.rainfall_1h}<span class="metric-unit">mm</span>`;
+                cards[1].querySelector('.metric-value').innerHTML = `${data.rainfall_24h}<span class="metric-unit">mm</span>`;
+                cards[2].querySelector('.metric-value').innerHTML = `${data.reservoir_level.toFixed(1)}<span class="metric-unit">m</span>`;
+                cards[3].querySelector('.metric-value').innerHTML = `${data.inflow}<span class="metric-unit">m³/s</span>`;
+                cards[4].querySelector('.metric-value').innerHTML = `${Math.round(data.pipe_util * 100)}<span class="metric-unit">%</span>`;
+                cards[5].querySelector('.metric-value').innerHTML = `${(data.population / 10000).toFixed(1)}<span class="metric-unit">万</span>`;
+                
+                // 颜色
+                const colorMap = (val, thresholds) => {
+                    if (val >= thresholds[2]) return LEVEL_COLORS.red;
+                    if (val >= thresholds[1]) return LEVEL_COLORS.orange;
+                    if (val >= thresholds[0]) return LEVEL_COLORS.yellow;
+                    return LEVEL_COLORS.blue;
+                };
+                cards[0].querySelector('.metric-value').style.color = colorMap(data.rainfall_1h, [16, 50, 80]);
+                cards[2].querySelector('.metric-value').style.color = data.reservoir_level > data.reservoir_warning ? LEVEL_COLORS.red : LEVEL_COLORS.blue;
+                cards[3].querySelector('.metric-value').style.color = data.inflow > 800 ? LEVEL_COLORS.orange : LEVEL_COLORS.blue;
+                cards[4].querySelector('.metric-value').style.color = data.pipe_util > 1 ? LEVEL_COLORS.red : LEVEL_COLORS.green;
+            }
+        }
+
+        function updateDFRIBars(data) {
+            const breakdown = {
+                '郑州': {rain: 0.553, topo: 0.784, res: 0.149, pop: 0.466},
+                '许昌': {rain: 0.354, topo: 0.636, res: 0.0, pop: 0.365},
+                '漯河': {rain: 0.256, topo: 0.475, res: 0.0, pop: 0.102}
+            };
+            const b = breakdown[currentCity];
+            if (!b) return;
+            
+            const bars = document.querySelectorAll('.dfri-bar-row');
+            const vals = [b.rain, b.topo, b.res, b.pop];
+            const colors = ['red', 'orange', 'yellow', 'orange'];
+            
+            bars.forEach((bar, i) => {
+                const fill = bar.querySelector('.dfri-bar-fill');
+                const val = bar.querySelector('.label-value');
+                fill.style.width = (vals[i] * 100) + '%';
+                val.textContent = vals[i].toFixed(3);
+                val.style.color = LEVEL_COLORS[colors[i]];
+            });
+        }
+
+        // ========================================
+        // 图表初始化
+        // ========================================
+        function initCharts() {
+            // 降雨量趋势图
+            rainfallChart = echarts.init(document.getElementById('rainfallChart'));
+            rainfallChart.setOption({
+                grid: {top: 10, right: 10, bottom: 25, left: 40},
+                tooltip: {trigger: 'axis'},
+                xAxis: {
+                    type: 'category',
+                    data: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    axisLabel: {color: '#64748b', fontSize: 10, interval: 3},
+                    axisLine: {lineStyle: {color: '#2a3a52'}}
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'mm',
+                    nameTextStyle: {color: '#64748b', fontSize: 10},
+                    axisLabel: {color: '#64748b', fontSize: 10},
+                    splitLine: {lineStyle: {color: '#1a2332'}}
+                },
+                series: [
+                    {
+                        name: '1h降雨量',
+                        type: 'bar',
+                        data: [5,8,12,6,4,3,2,5,10,18,25,35,42,55,65,58,45,30,22,15,10,8,5,3],
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {offset: 0, color: '#ef4444'},
+                                {offset: 1, color: '#3b82f6'}
+                            ])
+                        }
+                    },
+                    {
+                        name: '累计降雨',
+                        type: 'line',
+                        smooth: true,
+                        data: [5,13,25,31,35,38,40,45,55,73,98,133,175,230,295,353,398,428,450,465,475,483,488,491],
+                        yAxisIndex: 0,
+                        lineStyle: {color: '#eab308', width: 2},
+                        itemStyle: {color: '#eab308'},
+                        symbol: 'none'
+                    }
+                ],
+                legend: {data: ['1h降雨量','累计降雨'], textStyle: {color: '#94a3b8', fontSize: 10}, top: 0}
+            });
+
+            // 水位趋势图
+            waterLevelChart = echarts.init(document.getElementById('waterLevelChart'));
+            waterLevelChart.setOption({
+                grid: {top: 10, right: 10, bottom: 25, left: 45},
+                tooltip: {trigger: 'axis'},
+                xAxis: {
+                    type: 'category',
+                    data: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    axisLabel: {color: '#64748b', fontSize: 10, interval: 3},
+                    axisLine: {lineStyle: {color: '#2a3a52'}}
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'm',
+                    nameTextStyle: {color: '#64748b', fontSize: 10},
+                    axisLabel: {color: '#64748b', fontSize: 10},
+                    splitLine: {lineStyle: {color: '#1a2332'}}
+                },
+                series: [
+                    {
+                        name: '常庄水库',
+                        type: 'line',
+                        smooth: true,
+                        data: [128.5,128.8,129.1,129.3,129.5,129.8,130.0,130.3,130.6,130.9,131.0,131.1,131.2,131.3,131.3,131.3,131.2,131.1,131.0,130.8,130.6,130.4,130.2,130.0],
+                        lineStyle: {color: '#ef4444', width: 2},
+                        itemStyle: {color: '#ef4444'},
+                        symbol: 'none',
+                        markLine: {
+                            data: [{yAxis: 128.0, name: '汛限', lineStyle: {color: '#eab308', type: 'dashed'}, label: {formatter: '汛限128m', color: '#eab308', fontSize: 9}}],
+                            symbol: 'none'
+                        }
+                    },
+                    {
+                        name: '颍河许昌',
+                        type: 'line',
+                        smooth: true,
+                        data: [73.5,73.6,73.7,73.8,73.9,74.0,74.0,74.1,74.1,74.2,74.2,74.2,74.3,74.3,74.2,74.2,74.1,74.0,73.9,73.8,73.7,73.6,73.5,73.4],
+                        lineStyle: {color: '#3b82f6', width: 2},
+                        itemStyle: {color: '#3b82f6'},
+                        symbol: 'none'
+                    },
+                    {
+                        name: '沙河漯河',
+                        type: 'line',
+                        smooth: true,
+                        data: [60.0,60.1,60.2,60.2,60.3,60.3,60.4,60.4,60.5,60.5,60.5,60.5,60.5,60.5,60.4,60.4,60.3,60.3,60.2,60.1,60.0,59.9,59.8,59.7],
+                        lineStyle: {color: '#22c55e', width: 2},
+                        itemStyle: {color: '#22c55e'},
+                        symbol: 'none'
+                    }
+                ],
+                legend: {textStyle: {color: '#94a3b8', fontSize: 10}, top: 0}
+            });
+
+            // DFRI变化图
+            dfriChart = echarts.init(document.getElementById('dfriChart'));
+            dfriChart.setOption({
+                grid: {top: 10, right: 10, bottom: 25, left: 40},
+                tooltip: {trigger: 'axis'},
+                xAxis: {
+                    type: 'category',
+                    data: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    axisLabel: {color: '#64748b', fontSize: 10, interval: 3},
+                    axisLine: {lineStyle: {color: '#2a3a52'}}
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0, max: 1,
+                    name: 'DFRI',
+                    nameTextStyle: {color: '#64748b', fontSize: 10},
+                    axisLabel: {color: '#64748b', fontSize: 10},
+                    splitLine: {lineStyle: {color: '#1a2332'}}
+                },
+                series: [
+                    {
+                        name: '郑州',
+                        type: 'line',
+                        smooth: true,
+                        areaStyle: {opacity: 0.15},
+                        data: [0.15,0.18,0.22,0.20,0.18,0.16,0.15,0.22,0.30,0.35,0.40,0.45,0.48,0.50,0.50,0.48,0.45,0.40,0.35,0.30,0.25,0.22,0.20,0.18],
+                        lineStyle: {color: '#f97316', width: 2},
+                        itemStyle: {color: '#f97316'},
+                        symbol: 'none'
+                    },
+                    {
+                        name: '许昌',
+                        type: 'line',
+                        smooth: true,
+                        data: [0.10,0.12,0.15,0.14,0.12,0.11,0.10,0.15,0.20,0.25,0.28,0.32,0.34,0.35,0.34,0.32,0.30,0.27,0.24,0.22,0.20,0.18,0.16,0.14],
+                        lineStyle: {color: '#eab308', width: 2},
+                        itemStyle: {color: '#eab308'},
+                        symbol: 'none'
+                    },
+                    {
+                        name: '漯河',
+                        type: 'line',
+                        smooth: true,
+                        data: [0.08,0.09,0.10,0.10,0.09,0.08,0.08,0.12,0.15,0.18,0.20,0.22,0.22,0.22,0.21,0.20,0.19,0.17,0.16,0.15,0.13,0.12,0.11,0.10],
+                        lineStyle: {color: '#3b82f6', width: 2},
+                        itemStyle: {color: '#3b82f6'},
+                        symbol: 'none'
+                    }
+                ],
+                legend: {textStyle: {color: '#94a3b8', fontSize: 10}, top: 0},
+                markLine: {
+                    symbol: 'none',
+                    data: [
+                        {yAxis: 0.25, lineStyle: {color: '#eab308', type: 'dashed', opacity: 0.3}, label: {formatter: '黄色', color: '#eab308', fontSize: 9}},
+                        {yAxis: 0.45, lineStyle: {color: '#f97316', type: 'dashed', opacity: 0.3}, label: {formatter: '橙色', color: '#f97316', fontSize: 9}},
+                        {yAxis: 0.70, lineStyle: {color: '#ef4444', type: 'dashed', opacity: 0.3}, label: {formatter: '红色', color: '#ef4444', fontSize: 9}},
+                    ]
+                }
+            });
+
+            // 风险仪表盘
+            riskGauge = echarts.init(document.getElementById('riskGauge'));
+            riskGauge.setOption({
+                series: [{
+                    type: 'gauge',
+                    min: 0, max: 1,
+                    radius: '90%',
+                    progress: {show: true, width: 12},
+                    axisLine: {
+                        lineStyle: {
+                            width: 12,
+                            color: [
+                                [0.25, '#3b82f6'],
+                                [0.45, '#eab308'],
+                                [0.70, '#f97316'],
+                                [1, '#ef4444']
+                            ]
+                        }
+                    },
+                    pointer: {width: 4, length: '60%'},
+                    axisTick: {show: false},
+                    splitLine: {length: 8, lineStyle: {color: '#64748b'}},
+                    axisLabel: {color: '#64748b', fontSize: 9, distance: 8},
+                    detail: {
+                        valueAnimation: true,
+                        formatter: '{value}',
+                        color: '#e2e8f0',
+                        fontSize: 24,
+                        fontWeight: 'bold',
+                        offsetCenter: [0, '30%']
+                    },
+                    data: [{value: 0.501}]
+                }]
+            });
+        }
+
+        // ========================================
+        // 地图图层切换
+        // ========================================
+        function switchLayer(layer) {
+            document.querySelectorAll('.map-tool-btn').forEach(b => b.classList.remove('active'));
+            event.target.closest('.map-tool-btn').classList.add('active');
+            
+            // 简化的图层切换效果
+            if (layer === 'flood') {
+                alert('已切换至淹没推演图层\n（模拟数据：沙口路区域水深0.35m，预计3h后达1.44m）');
+            } else if (layer === 'evac') {
+                alert('已切换至撤离路线图层\n（源汇区→体育馆路线已规划，距离5.5km，预计37min）');
+            } else if (layer === 'rain') {
+                alert('已切换至降雨分布图层\n（郑州1h降雨65mm为极值中心，向东南递减）');
+            }
+        }
+
+        // ========================================
+        // 洪水推演模拟
+        // ========================================
+        function openSimulation() {
+            document.getElementById('simModal').classList.add('show');
+        }
+
+        function runSimulation() {
+            const hours = parseInt(document.getElementById('simHours').value);
+            const rain1h = parseFloat(document.getElementById('simRain1h').value);
+            const rain3h = parseFloat(document.getElementById('simRain3h').value);
+            const outflow1 = parseFloat(document.getElementById('simOutflow1').value);
+            const outflow2 = parseFloat(document.getElementById('simOutflow2').value);
+            
+            // 模拟推演结果
+            const results = [];
+            for (let h = 1; h <= hours; h++) {
+                const totalRain = (rain1h * h * 0.8);
+                const floodedArea = (totalRain * 0.15 + outflow1 * h * 0.002 + outflow2 * h * 0.001).toFixed(1);
+                const affectedPop = Math.round(totalRain * 50 + outflow1 * h * 0.5);
+                const shaheLevel = (60.5 + outflow1 * h * 0.001).toFixed(2);
+                const xuchangLevel = (74.2 + outflow1 * h * 0.0008).toFixed(2);
+                const luoheLevel = (60.5 + outflow1 * h * 0.0006 + outflow2 * h * 0.0004).toFixed(2);
+                
+                let zhengzhouRisk = h <= 1 ? '橙色' : '红色';
+                let xuchangRisk = h <= 2 ? '黄色' : h <= 4 ? '橙色' : '红色';
+                let luoheRisk = h <= 3 ? '蓝色' : h <= 5 ? '黄色' : '橙色';
+                
+                results.push({
+                    hour: h,
+                    time: `${h}h后`,
+                    floodedArea: floodedArea,
+                    affectedPop: affectedPop,
+                    zhengzhouLevel: zhengzhouRisk,
+                    xuchangLevel: xuchangLevel,
+                    luoheLevel: luoheLevel,
+                    shaheLevel: shaheLevel,
+                    xuchangWaterLevel: xuchangLevel,
+                    luoheWaterLevel: luoheLevel,
+                });
+            }
+            
+            let html = '<div class="panel-title" style="margin-top:16px"><span>推演结果</span></div>';
+            html += '<table class="sim-result-table"><thead><tr>';
+            html += '<th>时间</th><th>淹没面积(km²)</th><th>影响人口</th><th>郑州</th><th>许昌</th><th>漯河</th><th>许昌水位</th><th>漯河水位</th>';
+            html += '</tr></thead><tbody>';
+            results.forEach(r => {
+                html += `<tr>
+                    <td>${r.time}</td>
+                    <td style="color: var(--orange)">${r.floodedArea}</td>
+                    <td style="color: var(--red)">${r.affectedPop.toLocaleString()}</td>
+                    <td><span class="level-tag ${r.zhengzhouLevel === '红色' ? 'red' : 'orange'}">${r.zhengzhouLevel}</span></td>
+                    <td><span class="level-tag ${r.xuchangLevel === '红色' ? 'red' : r.xuchangLevel === '橙色' ? 'orange' : 'yellow'}">${r.xuchangLevel}</span></td>
+                    <td><span class="level-tag ${r.luoheLevel === '橙色' ? 'orange' : r.luoheLevel === '黄色' ? 'yellow' : 'blue'}">${r.luoheLevel}</span></td>
+                    <td>${r.xuchangWaterLevel}m</td>
+                    <td>${r.luoheWaterLevel}m</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            // 马斯京根洪水传播结果
+            html += '<div class="panel-title" style="margin-top:16px"><span>马斯京根洪水传播</span></div>';
+            html += '<table class="sim-result-table"><thead><tr>';
+            html += '<th>河段</th><th>K(h)</th><th>x</th><th>洪峰流量(m³/s)</th><th>到达时间</th><th>超警</th>';
+            html += '</tr></thead><tbody>';
+            html += `<tr><td>常庄水库→中牟站</td><td>3.0</td><td>0.20</td><td>${Math.round(outflow1*0.82)}</td><td>3.0h</td><td>-</td></tr>`;
+            html += `<tr><td>中牟站→颍河许昌</td><td>6.0</td><td>0.15</td><td>${Math.round(outflow1*0.55)}</td><td>9.0h</td><td style="color: ${outflow1 > 700 ? 'var(--yellow)' : 'var(--green)'}">${outflow1 > 700 ? '超警0.5m' : '未超警'}</td></tr>`;
+            html += `<tr><td>颍河许昌→沙河漯河</td><td>5.0</td><td>0.15</td><td>${Math.round(outflow1*0.38)}</td><td>14.0h</td><td style="color: ${outflow1 > 800 ? 'var(--yellow)' : 'var(--green)'}">${outflow1 > 800 ? '超警0.3m' : '未超警'}</td></tr>`;
+            html += '</tbody></table>';
+            
+            document.getElementById('simResults').innerHTML = html;
+        }
+
+        // ========================================
+        // 撤离路线规划
+        // ========================================
+        function openEvacuation() {
+            document.getElementById('evacModal').classList.add('show');
+        }
+
+        function runEvacuation() {
+            const from = document.getElementById('evacFrom').value;
+            const pop = parseInt(document.getElementById('evacPop').value);
+            
+            const routes = {
+                'ZZ-SK': [
+                    {name: '→ 郑州体育馆避难所', dist: 3200, time: 18, safety: 0.82, crossings: 0, vehicles: Math.ceil(pop/45)},
+                    {name: '→ 郑州国际会展中心', dist: 5500, time: 30, safety: 0.75, crossings: 1, vehicles: Math.ceil(pop/45)},
+                ],
+                'XC-WB': [
+                    {name: '→ 许昌体育馆避难所', dist: 1800, time: 35, safety: 0.78, crossings: 0, vehicles: Math.ceil(pop/45)},
+                    {name: '→ 许昌学院避难所', dist: 2400, time: 45, safety: 0.85, crossings: 0, vehicles: Math.ceil(pop/45)},
+                ],
+                'LH-YH': [
+                    {name: '→ 漯河市体育馆', dist: 5546, time: 37, safety: 0.52, crossings: 1, vehicles: Math.ceil(pop/45)},
+                    {name: '→ 郾城区临时安置点', dist: 5916, time: 39, safety: 0.59, crossings: 0, vehicles: Math.ceil(pop/45)},
+                    {name: '→ 源汇区文化中心', dist: 4200, time: 28, safety: 0.65, crossings: 0, vehicles: Math.ceil(pop/45)},
+                ]
+            };
+            
+            const routeList = routes[from] || routes['LH-YH'];
+            const recommended = routeList.reduce((a, b) => a.safety > b.safety ? a : b);
+            
+            let html = '<div class="panel-title" style="margin-top:16px"><span>推荐路线</span></div>';
+            html += '<table class="sim-result-table"><thead><tr>';
+            html += '<th>路线</th><th>距离(m)</th><th>预计时间</th><th>安全度</th><th>淹没穿越</th><th>所需车辆</th><th>推荐</th>';
+            html += '</tr></thead><tbody>';
+            routeList.forEach(r => {
+                const isRec = r === recommended;
+                const safetyColor = r.safety > 0.7 ? 'var(--green)' : r.safety > 0.5 ? 'var(--yellow)' : 'var(--red)';
+                html += `<tr>
+                    <td>${r.name}</td>
+                    <td>${r.dist}</td>
+                    <td>${r.time}min</td>
+                    <td style="color: ${safetyColor}; font-weight: 700">${r.safety.toFixed(3)}</td>
+                    <td>${r.crossings}</td>
+                    <td>${r.vehicles}</td>
+                    <td>${isRec ? '<span class="level-tag" style="background: rgba(34,197,94,0.2); color: #86efac">✓ 推荐</span>' : ''}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            html += `<div style="margin-top:16px; padding:12px; background: var(--bg-card); border-radius:8px; border:1px solid var(--border-color);">`;
+            html += `<div style="font-size:12px; color: var(--text-secondary); margin-bottom:8px;">📊 撤离方案摘要</div>`;
+            html += `<div style="font-size:13px;">推荐路线: <strong style="color: var(--cyan)">${recommended.name}</strong></div>`;
+            html += `<div style="font-size:12px; margin-top:4px; color: var(--text-muted);">总距离 ${recommended.dist}m · 预计 ${recommended.time} 分钟 · 安全度 ${(recommended.safety*100).toFixed(1)}% · 需调配 ${recommended.vehicles} 辆大巴</div>`;
+            html += `</div>`;
+            
+            document.getElementById('evacResults').innerHTML = html;
+        }
+
+        // ========================================
+        // 工具函数
+        // ========================================
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const mi = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = `${y}-${m}-${d} ${h}:${mi}:${s}`;
+        }
+
+        // ========================================
+        // 高级功能：数据质量 / 集合推演 / 风险解释
+        // ========================================
+
+        // 数据质量 (DQS) 模拟数据
+        const QUALITY_DATA = [
+            {name: '常庄水库', Q: 0.965, status: 'ok', note: '正常'},
+            {name: '沙口路隧道', Q: 0.950, status: 'ok', note: '正常'},
+            {name: '紫荆山地铁', Q: 0.987, status: 'ok', note: '正常'},
+            {name: '白龟山水库', Q: 0.930, status: 'ok', note: '正常'},
+            {name: '颍河许昌', Q: 0.967, status: 'ok', note: '正常'},
+            {name: '魏都区', Q: 0.967, status: 'ok', note: '正常'},
+            {name: '沙澧河交汇', Q: 0.973, status: 'ok', note: '正常'},
+            {name: '源汇区滞洪', Q: 0.680, status: 'degraded', note: '移动信令源降级·已降权+人工复核'},
+        ];
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+        }
+
+        function populateQuality() {
+            const body = document.getElementById('qualityBody');
+            if (!body) return;
+            let html = '';
+            QUALITY_DATA.forEach(s => {
+                const color = s.Q >= 0.9 ? 'var(--green)' : s.Q >= 0.7 ? 'var(--yellow)' : 'var(--red)';
+                html += `<div class="quality-row">
+                    <div class="quality-label"><span class="q-name">${s.name} <span style="color:var(--text-muted);font-size:10px">[${s.status}]</span></span><span class="q-val" style="color:${color}">${s.Q.toFixed(3)}</span></div>
+                    <div class="quality-track"><div class="quality-fill" style="width:${s.Q * 100}%;background:${color}"></div></div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${s.note}</div>
+                </div>`;
+            });
+            const degraded = QUALITY_DATA.filter(s => s.status === 'degraded').length;
+            html += `<div style="margin-top:8px;padding:8px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:6px;font-size:11px;color:#fde047">⚠ 降级站点 ${degraded} 个：相关分项在DFRI中自动降权，已提升人工复核优先级。</div>`;
+            body.innerHTML = html;
+        }
+
+        // 风险解释 (概率化DFRI贡献分解)
+        const EXPLAIN_DATA = {
+            point: 0.477, p5: 0.405, p95: 0.549,
+            contrib: [
+                {name: '降雨', val: 0.212, color: 'var(--red)'},
+                {name: '地形', val: 0.152, color: 'var(--orange)'},
+                {name: '人口', val: 0.092, color: 'var(--orange)'},
+                {name: '水库', val: 0.021, color: 'var(--yellow)'},
+            ]
+        };
+
+        function buildExplain() {
+            const body = document.getElementById('explainBody');
+            if (!body) return;
+            let html = '';
+            const maxV = Math.max(...EXPLAIN_DATA.contrib.map(x => x.val));
+            EXPLAIN_DATA.contrib.forEach(c => {
+                html += `<div class="explain-bar-row">
+                    <div class="explain-label"><span>${c.name} 贡献</span><span style="color:${c.color};font-family:'Courier New'">${c.val.toFixed(3)}</span></div>
+                    <div class="explain-track"><div class="explain-fill" style="width:${c.val / maxV * 100}%;background:${c.color}"></div></div>
+                </div>`;
+            });
+            body.innerHTML = html;
+        }
+
+        // 情景集合推演（JS 马斯京根）
+        function muskingumRoute(inflow, K, x, dt, initOut) {
+            const denom = 2 * K * (1 - x) + dt;
+            const C0 = (dt - 2 * K * x) / denom;
+            const C1 = (dt + 2 * K * x) / denom;
+            const C2 = (2 * K * (1 - x) - dt) / denom;
+            const out = [initOut];
+            for (let i = 1; i < inflow.length; i++) {
+                const o = C0 * inflow[i] + C1 * inflow[i - 1] + C2 * out[i - 1];
+                out.push(Math.max(0, o));
+            }
+            return out;
+        }
+        function flowToLevel(q, a, b, c) { return a * Math.pow(q, b) + c; }
+        function peakArrival(peak, base, K) {
+            if (base <= 0) return K;
+            const r = peak / base;
+            if (r <= 1) return K;
+            return K * Math.log(r) + K * 0.5;
+        }
+
+        function runEnsemble() {
+            const base = parseFloat(document.getElementById('ensBase').value);
+            const warn = parseFloat(document.getElementById('ensWarn').value);
+            const releases = document.getElementById('ensRelease').value.split(',').map(Number);
+            const rains = document.getElementById('ensRain').value.split(',').map(Number);
+            const K = 6, x = 0.15, dt = 1, initOut = 300;
+            const baseSeries = [300, 500, base, base, base * 0.93, base * 0.8, base * 0.67];
+            let arrivals = [], levels = [], exceed = 0, n = 0;
+            releases.forEach(rel => {
+                rains.forEach(ra => {
+                    const scen = baseSeries.map(q => q + rel);
+                    let routed = muskingumRoute(scen, K, x, dt, initOut);
+                    routed = routed.map((q, i) => q + ra * (i / (routed.length - 1)));
+                    const peak = Math.max(...routed);
+                    const lvl = flowToLevel(peak, 0.12, 0.42, 73);
+                    const arr = peakArrival(peak, 300, K);
+                    arrivals.push(arr); levels.push(lvl); if (lvl > warn) exceed++; n++;
+                });
+            });
+            arrivals.sort((a, b) => a - b);
+            const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+            const p90 = arrivals[Math.min(n - 1, Math.floor(0.9 * n - 1))];
+            let html = '<div class="panel-title" style="margin-top:8px"><span>集合推演结果</span></div>';
+            html += '<table class="sim-result-table"><thead><tr><th>情景数</th><th>平均到达(h)</th><th>90分位(h)</th><th>平均洪峰水位(m)</th><th>超警概率</th></tr></thead><tbody>';
+            html += `<tr><td>${n}</td><td>${mean(arrivals).toFixed(2)}</td><td>${p90.toFixed(2)}</td><td>${mean(levels).toFixed(2)}</td><td style="color:${exceed / n > 0 ? 'var(--yellow)' : 'var(--green)'}">${(exceed / n * 100).toFixed(0)}%</td></tr>`;
+            html += '</tbody></table>';
+            html += `<div style="margin-top:10px;font-size:11px;color:var(--text-muted)">基础泄洪序列 [300,500,${base},${base},${(base*0.93).toFixed(0)},${(base*0.8).toFixed(0)},${(base*0.67).toFixed(0)}] m³/s，下游警戒 ${warn}m。组合 ${releases.length}×${rains.length} 情景（泄洪×降雨）。到达时间由马斯京根 K=6h,x=0.15 估算。</div>`;
+            document.getElementById('ensembleResults').innerHTML = html;
+        }
+
+        // ========================================
+        // 初始化
+        // ========================================
+        window.addEventListener('load', () => {
+            initMap();
+            initCharts();
+            populateQuality();
+            buildExplain();
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // 响应窗口大小变化
+            window.addEventListener('resize', () => {
+                rainfallChart.resize();
+                waterLevelChart.resize();
+                dfriChart.resize();
+                riskGauge.resize();
+            });
+        });
+    </script>
+</body>
+</html>

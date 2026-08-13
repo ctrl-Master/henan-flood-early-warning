@@ -1,0 +1,22 @@
+# ===== 项目内部 / 本地数据（不提交） =====
+.workbuddy/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# ===== 本地临时 =====
+tmp/
+dist/
+build/

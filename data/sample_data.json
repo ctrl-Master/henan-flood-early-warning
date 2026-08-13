@@ -1,0 +1,495 @@
+{
+  "system": "河南省中东部防汛与台风极端降雨监控预警系统",
+  "version": "1.0",
+  "timestamp": "2026-08-13T08:00:00+08:00",
+  "cities": {
+    "郑州": {
+      "grid_cells": [
+        {
+          "cell_id": "ZZ-CZ-001",
+          "name": "常庄水库",
+          "type": "reservoir",
+          "city": "郑州",
+          "location": {"lon": 113.5421, "lat": 34.7589},
+          "meteorological": {
+            "rainfall_1h_mm": 78.5,
+            "rainfall_3h_mm": 125.0,
+            "rainfall_6h_mm": 180.0,
+            "rainfall_24h_mm": 285.0,
+            "intensity_mm_per_h": 68.0,
+            "forecast_3h_mm": 85.0,
+            "radar_reflectivity_dbz": 55
+          },
+          "topography": {
+            "elevation_m": 195.0,
+            "slope_degree": 22.5,
+            "aspect_degree": 135,
+            "impervious_ratio": 0.10,
+            "green_ratio": 0.80,
+            "runoff_coefficient": 0.25,
+            "manning_n": 0.035
+          },
+          "reservoir": {
+            "reservoir_id": "ZZ-CZ-001",
+            "name": "常庄水库",
+            "river_system": "贾鲁河水系-金水河上游",
+            "current_level_m": 131.30,
+            "current_storage_m3": 18500000,
+            "design_flood_level_m": 134.50,
+            "check_flood_level_m": 136.20,
+            "warning_level_m": 128.00,
+            "dead_level_m": 120.00,
+            "total_capacity_m3": 35000000,
+            "flood_control_capacity_m3": 16500000,
+            "inflow_m3_per_s": 850,
+            "outflow_m3_per_s": 300,
+            "design_outflow_m3_per_s": 1500,
+            "spillway_status": "partial_open",
+            "upstream_rainfall_mm": 78.5,
+            "remaining_capacity_m3": 12000000,
+            "reservoir_risk_ratio": 0.402
+          },
+          "dfri_score": 0.62,
+          "risk_level": "橙色",
+          "primary_risk_factor": "水库承压+上游暴雨"
+        },
+        {
+          "cell_id": "ZZ-SK-001",
+          "name": "沙口路下穿隧道",
+          "type": "underpass_tunnel",
+          "city": "郑州",
+          "location": {"lon": 113.6312, "lat": 34.7567},
+          "meteorological": {
+            "rainfall_1h_mm": 65.0,
+            "rainfall_3h_mm": 95.0,
+            "rainfall_6h_mm": 120.0,
+            "rainfall_24h_mm": 180.0,
+            "intensity_mm_per_h": 68.0,
+            "forecast_3h_mm": 85.0
+          },
+          "topography": {
+            "elevation_m": 95.0,
+            "slope_degree": 0.5,
+            "impervious_ratio": 0.90,
+            "green_ratio": 0.05,
+            "runoff_coefficient": 0.88,
+            "low_lying_depth_m": -6.5,
+            "historical_flood_count": 3
+          },
+          "upstream_reservoir_id": "ZZ-CZ-001",
+          "upstream_distance_km": 15.0,
+          "drainage": {
+            "pipe_capacity_m3_per_s": 8.5,
+            "pipe_utilization_ratio": 1.45,
+            "pipe_condition": "fair",
+            "pump_design_capacity_m3_per_s": 5.0,
+            "pump_actual_capacity_m3_per_s": 4.2,
+            "pump_status": "running_partial",
+            "pump_fault": "3号泵电机故障"
+          },
+          "socio_economic": {
+            "population_density_per_km2": 18000,
+            "total_population": 50000,
+            "vulnerable_population": 8000,
+            "key_facilities": [
+              {"name": "郑州火车站", "type": "railway_station", "distance_m": 800},
+              {"name": "地铁1号线火车站站", "type": "subway_station", "distance_m": 600}
+            ],
+            "traffic_flow_density": 320
+          },
+          "current_water_depth_m": 0.35,
+          "warning_thresholds": {
+            "yellow_m": 0.15,
+            "orange_m": 0.50,
+            "red_m": 1.50
+          },
+          "dfri_score": 0.501,
+          "risk_level": "橙色",
+          "components": {
+            "rainfall": 0.553,
+            "topo": 0.784,
+            "reservoir": 0.149,
+            "population": 0.466
+          },
+          "primary_risk_factor": "降雨+管网超载"
+        },
+        {
+          "cell_id": "ZZ-ZJS-001",
+          "name": "紫荆山地铁站",
+          "type": "subway_station",
+          "city": "郑州",
+          "location": {"lon": 113.6789, "lat": 34.7623},
+          "meteorological": {
+            "rainfall_1h_mm": 62.0,
+            "rainfall_3h_mm": 90.0,
+            "rainfall_6h_mm": 115.0,
+            "rainfall_24h_mm": 170.0,
+            "intensity_mm_per_h": 65.0
+          },
+          "topography": {
+            "elevation_m": 98.0,
+            "slope_degree": 1.0,
+            "impervious_ratio": 0.92,
+            "green_ratio": 0.03,
+            "runoff_coefficient": 0.90
+          },
+          "subway_data": {
+            "depth_m": -18.5,
+            "entrance_count": 6,
+            "elevated_entrance_count": 2,
+            "flood_barriers_count": 4,
+            "flood_barrier_height_m": 0.6,
+            "daily_passenger_flow": 120000,
+            "current_water_depth_m": 0.0
+          },
+          "drainage": {
+            "pipe_capacity_m3_per_s": 3.2,
+            "pipe_utilization_ratio": 0.85,
+            "pump_capacity_m3_per_s": 2.0,
+            "pump_status": "running_full"
+          },
+          "socio_economic": {
+            "population_density_per_km2": 18500,
+            "traffic_flow_density": 350
+          },
+          "dfri_score": 0.42,
+          "risk_level": "黄色",
+          "primary_risk_factor": "降雨+人口密集"
+        }
+      ],
+      "river_reaches": [
+        {
+          "reach_id": "ZZ-JL-001",
+          "name": "贾鲁河郑州段",
+          "current_level_m": 88.50,
+          "warning_level_m": 89.00,
+          "guarantee_level_m": 90.50,
+          "current_flow_m3_per_s": 450,
+          "max_capacity_m3_per_s": 1200,
+          "muskingum_k_h": 3.0,
+          "muskingum_x": 0.20
+        }
+      ]
+    },
+    "许昌": {
+      "grid_cells": [
+        {
+          "cell_id": "XC-BGS-001",
+          "name": "白龟山水库",
+          "type": "reservoir",
+          "city": "许昌",
+          "location": {"lon": 113.0892, "lat": 33.8721},
+          "meteorological": {
+            "rainfall_1h_mm": 42.0,
+            "rainfall_3h_mm": 62.0,
+            "rainfall_6h_mm": 85.0,
+            "rainfall_24h_mm": 120.0,
+            "intensity_mm_per_h": 42.0
+          },
+          "reservoir": {
+            "reservoir_id": "XC-BGS-001",
+            "name": "白龟山水库",
+            "river_system": "沙颍河水系-沙河干流",
+            "current_level_m": 105.80,
+            "current_storage_m3": 420000000,
+            "design_flood_level_m": 109.00,
+            "check_flood_level_m": 111.50,
+            "warning_level_m": 104.00,
+            "dead_level_m": 95.00,
+            "total_capacity_m3": 649000000,
+            "flood_control_capacity_m3": 230000000,
+            "inflow_m3_per_s": 1200,
+            "outflow_m3_per_s": 600,
+            "design_outflow_m3_per_s": 3500,
+            "spillway_status": "partial_open",
+            "upstream_rainfall_mm": 62.3,
+            "remaining_capacity_m3": 145000000,
+            "reservoir_risk_ratio": 0.286
+          },
+          "dfri_score": 0.38,
+          "risk_level": "黄色"
+        },
+        {
+          "cell_id": "XC-YH-001",
+          "name": "颍河许昌段",
+          "type": "river_reach",
+          "city": "许昌",
+          "location": {"lon": 113.8523, "lat": 34.0398},
+          "meteorological": {
+            "rainfall_1h_mm": 38.0,
+            "rainfall_3h_mm": 62.0,
+            "rainfall_6h_mm": 85.0,
+            "rainfall_24h_mm": 120.0,
+            "intensity_mm_per_h": 42.0
+          },
+          "river": {
+            "reach_id": "XC-YH-001",
+            "name": "颍河许昌段",
+            "current_level_m": 74.20,
+            "warning_level_m": 75.50,
+            "guarantee_level_m": 77.00,
+            "current_flow_m3_per_s": 850,
+            "max_capacity_m3_per_s": 2800,
+            "muskingum_k_h": 6.0,
+            "muskingum_x": 0.15,
+            "levee_height_m": 78.50,
+            "levee_condition": "good"
+          },
+          "dfri_score": 0.30,
+          "risk_level": "黄色"
+        },
+        {
+          "cell_id": "XC-WB-001",
+          "name": "魏都区老城区低洼住宅区",
+          "type": "urban_low_lying",
+          "city": "许昌",
+          "location": {"lon": 113.8221, "lat": 34.0256},
+          "meteorological": {
+            "rainfall_1h_mm": 38.0,
+            "rainfall_3h_mm": 62.0,
+            "rainfall_6h_mm": 85.0,
+            "rainfall_24h_mm": 120.0,
+            "intensity_mm_per_h": 42.0,
+            "forecast_3h_mm": 55.0
+          },
+          "topography": {
+            "elevation_m": 68.5,
+            "slope_degree": 0.5,
+            "impervious_ratio": 0.85,
+            "green_ratio": 0.08,
+            "runoff_coefficient": 0.82,
+            "low_lying_depth_m": -1.8,
+            "historical_flood_count": 5
+          },
+          "drainage": {
+            "design_return_period_yr": 1,
+            "main_pipe_diameter_mm": 600,
+            "pipe_capacity_m3_per_s": 3.5,
+            "pipe_utilization_ratio": 0.95,
+            "pipe_age_years": 25,
+            "pipe_condition": "fair",
+            "pump_design_capacity_m3_per_s": 2.0,
+            "pump_actual_capacity_m3_per_s": 1.8,
+            "pump_status": "running_full"
+          },
+          "socio_economic": {
+            "population_density_per_km2": 12500,
+            "total_population": 8500,
+            "vulnerable_population": 1850,
+            "key_facilities": [
+              {"name": "许昌市人民医院", "type": "hospital", "distance_m": 500, "vulnerability": 0.9},
+              {"name": "古槐街小学", "type": "school", "distance_m": 300, "vulnerability": 0.8},
+              {"name": "魏都区老年公寓", "type": "nursing_home", "distance_m": 200, "vulnerability": 0.95}
+            ],
+            "traffic_flow_density": 180
+          },
+          "evacuation_routes": [
+            {"route_id": "EVAC-XC-01", "destination": "许昌体育馆避难所", "distance_m": 1800, "estimated_time_min": 35},
+            {"route_id": "EVAC-XC-02", "destination": "许昌学院避难所", "distance_m": 2400, "estimated_time_min": 45}
+          ],
+          "dfri_score": 0.342,
+          "risk_level": "黄色",
+          "components": {
+            "rainfall": 0.354,
+            "topo": 0.636,
+            "reservoir": 0.000,
+            "population": 0.365
+          }
+        }
+      ]
+    },
+    "漯河": {
+      "grid_cells": [
+        {
+          "cell_id": "LH-SLH-001",
+          "name": "沙澧河交汇处",
+          "type": "river_confluence",
+          "city": "漯河",
+          "location": {"lon": 114.0215, "lat": 33.5812},
+          "meteorological": {
+            "rainfall_1h_mm": 25.0,
+            "rainfall_3h_mm": 45.0,
+            "rainfall_6h_mm": 68.0,
+            "rainfall_24h_mm": 95.0,
+            "intensity_mm_per_h": 28.0
+          },
+          "topography": {
+            "elevation_m": 56.5,
+            "slope_degree": 0.3,
+            "impervious_ratio": 0.15,
+            "green_ratio": 0.75,
+            "runoff_coefficient": 0.20
+          },
+          "confluence_data": {
+            "shahe": {
+              "current_level_m": 60.50,
+              "warning_level_m": 62.00,
+              "guarantee_level_m": 64.00,
+              "current_flow_m3_per_s": 1500,
+              "max_capacity_m3_per_s": 4200,
+              "muskingum_k_h": 5.0,
+              "muskingum_x": 0.15
+            },
+            "lihe": {
+              "current_level_m": 58.20,
+              "warning_level_m": 59.50,
+              "guarantee_level_m": 61.00,
+              "current_flow_m3_per_s": 320,
+              "max_capacity_m3_per_s": 800
+            },
+            "confluence_level_m": 60.80,
+            "confluence_flow_m3_per_s": 1820,
+            "levee_north_height_m": 65.50,
+            "levee_south_height_m": 65.00,
+            "levee_condition": "fair"
+          },
+          "scenic_area": {
+            "name": "沙澧河风景区",
+            "visitor_evacuation_required": true,
+            "estimated_visitors": 350
+          },
+          "dfri_score": 0.218,
+          "risk_level": "蓝色"
+        },
+        {
+          "cell_id": "LH-YH-001",
+          "name": "源汇区平原低洼滞洪区",
+          "type": "flood_retention_area",
+          "city": "漯河",
+          "location": {"lon": 114.0523, "lat": 33.5421},
+          "meteorological": {
+            "rainfall_1h_mm": 25.0,
+            "rainfall_3h_mm": 45.0,
+            "rainfall_6h_mm": 68.0,
+            "rainfall_24h_mm": 95.0
+          },
+          "topography": {
+            "elevation_m": 56.5,
+            "slope_degree": 0.5,
+            "impervious_ratio": 0.05,
+            "green_ratio": 0.85,
+            "runoff_coefficient": 0.15,
+            "low_lying_depth_m": -2.0
+          },
+          "retention_area": {
+            "area_km2": 35.5,
+            "design_retention_capacity_m3": 50000000,
+            "current_retention_volume_m3": 0,
+            "activation_threshold": {
+              "shahe_level_m": 63.50,
+              "inflow_rate_m3_per_s": 3500
+            }
+          },
+          "socio_economic": {
+            "population_density_per_km2": 320,
+            "total_population": 11360,
+            "villages": [
+              {"name": "xx村", "population": 2100, "evacuation_priority": "high"},
+              {"name": "xx-N1村", "population": 1850, "evacuation_priority": "high"},
+              {"name": "xx-N2村", "population": 1560, "evacuation_priority": "medium"},
+              {"name": "xx-N3村", "population": 1300, "evacuation_priority": "medium"}
+            ],
+            "agricultural_exposure": {
+              "crop_area_km2": 28.5,
+              "crop_type": "夏玉米(拔节期)",
+              "greenhouse_count": 45,
+              "livestock_farms": 8
+            }
+          },
+          "evacuation_routes": [
+            {"route_id": "EVAC-LH-01", "from": "Zone-A", "to": "漯河市体育馆", "distance_km": 8.5, "estimated_time_min": 50, "safety_score": 0.52},
+            {"route_id": "EVAC-LH-02", "from": "Zone-B", "to": "源汇区文化中心", "distance_km": 6.2, "estimated_time_min": 35, "safety_score": 0.65},
+            {"route_id": "EVAC-LH-03", "from": "Zone-C", "to": "郾城区临时安置点", "distance_km": 12.0, "estimated_time_min": 65, "safety_score": 0.59}
+          ],
+          "dfri_score": 0.195,
+          "risk_level": "蓝色"
+        }
+      ]
+    }
+  },
+  "muskingum_parameters": {
+    "ZZ-CZ_to_ZZ-JL": {"K_h": 3.0, "x": 0.20, "description": "常庄水库→贾鲁河中牟站"},
+    "ZZ-JL_to_XC-YH": {"K_h": 6.0, "x": 0.15, "description": "中牟站→颍河许昌段"},
+    "XC-YH_to_LH-SH": {"K_h": 5.0, "x": 0.15, "description": "颍河许昌段→沙河漯河段"}
+  },
+  "dfri_weights": {
+    "default": {"rain": 0.35, "topo": 0.20, "reservoir": 0.25, "population": 0.20},
+    "typhoon_mode": {"rain": 0.40, "topo": 0.20, "reservoir": 0.20, "population": 0.20}
+  },
+  "warning_thresholds": {
+    "blue": {"dfri_min": 0.15, "rainfall_6h_min_mm": 25},
+    "yellow": {"dfri_min": 0.25, "rainfall_3h_min_mm": 25, "rainfall_6h_min_mm": 50, "reservoir_over_warning_max_m": 0.5, "river_over_warning_max_m": 0.5},
+    "orange": {"dfri_min": 0.45, "rainfall_1h_min_mm": 50, "rainfall_3h_min_mm": 80, "reservoir_over_warning_max_m": 2.0, "river_over_warning_max_m": 1.5, "underpass_water_max_m": 0.5},
+    "red": {"dfri_min": 0.70, "rainfall_1h_min_mm": 80, "rainfall_24h_min_mm": 250, "reservoir_over_warning_min_m": 2.0, "river_over_guarantee": true, "underpass_water_min_m": 1.5}
+  },
+  "data_quality": {
+    "description": "数据质量评分 DQS，Q_i∈[0,1]，低于0.4自动降权并提升人工复核",
+    "scorer_weights": {"missing": 0.35, "stale": 0.20, "jump": 0.15, "sensor": 0.30},
+    "stations": {
+      "ZZ-CZ-001": {"missing_rate": 0.0, "staleness_min": 3, "jump_rate": 0.05, "sensor_status": "ok", "Q": 0.965},
+      "ZZ-SK-001": {"missing_rate": 0.0, "staleness_min": 4, "jump_rate": 0.08, "sensor_status": "ok", "Q": 0.95},
+      "ZZ-ZJS-001": {"missing_rate": 0.0, "staleness_min": 2, "jump_rate": 0.0, "sensor_status": "ok", "Q": 0.987},
+      "XC-BGS-001": {"missing_rate": 0.05, "staleness_min": 6, "jump_rate": 0.05, "sensor_status": "ok", "Q": 0.93},
+      "XC-YH-001": {"missing_rate": 0.0, "staleness_min": 5, "jump_rate": 0.0, "sensor_status": "ok", "Q": 0.967},
+      "XC-WB-001": {"missing_rate": 0.0, "staleness_min": 5, "jump_rate": 0.0, "sensor_status": "ok", "Q": 0.967},
+      "LH-SLH-001": {"missing_rate": 0.0, "staleness_min": 4, "jump_rate": 0.0, "sensor_status": "ok", "Q": 0.973},
+      "LH-YH-001": {"missing_rate": 0.0, "staleness_min": 4, "jump_rate": 0.0, "sensor_status": "degraded", "Q": 0.68, "note": "移动信令源降级，已降权并人工复核"}
+    },
+    "impute_policy": {
+      "long_missing": "气候态回填 + 权重降级 + 人工复核",
+      "short_missing": "时空邻近站点 + 雷达/数值预报融合"
+    }
+  },
+  "uncertainty": {
+    "description": "各分项不确定度σ_i（预报误差/传感器噪声），用于蒙特卡洛概率化DFRI",
+    "rain": 0.10, "topo": 0.05, "reservoir": 0.12, "population": 0.04
+  },
+  "simulation_scenarios": {
+    "description": "情景集合推演：多泄洪方案 × 多本地降雨情景",
+    "base_outflow_series_m3_per_s": [300, 500, 750, 750, 700, 600, 500],
+    "release_scenarios_m3_per_s": [0, 200, 400],
+    "rainfall_peak_add_m3_per_s": [0, 150, 300],
+    "downstream_warning_level_m": 75.5,
+    "exceed_warning_prob_target": 0.3
+  },
+  "warning_lifecycle": {
+    "description": "预警发布闭环：持续性+空间一致性过滤、解除、复盘",
+    "persistence_steps": 2,
+    "spatial_neighbor_min": 1,
+    "dismiss_threshold_dfri": 0.25,
+    "escalation": ["短信", "APP推送", "电话", "现场"],
+    "review_auto_generate": true
+  },
+  "verification": {
+    "description": "模型验证指标（7·20级事件回放）",
+    "event": "7·20 级极端暴雨回放",
+    "metrics": {"POD": 0.90, "FAR": 0.10, "CSI": 0.818, "Accuracy": 0.98},
+    "mean_lead_time_min": 42,
+    "admission": "CSI≥0.75 且 POD≥0.85，满足业务准入"
+  },
+  "roadmap": {
+    "description": "分阶段落地路线图",
+    "phases": [
+      {"phase": "Phase 1 MVP", "duration": "3-4个月", "scope": "郑州核心区+常庄水库+重点下穿/地铁站",
+       "deliverables": "基础DFRI+简化马斯京根+四级预警+大屏/APP", "acceptance": "CSI≥0.75、端到端延迟<60s",
+       "team": "算法1+前端1+数据1", "hardware": "服务器2台"},
+      {"phase": "Phase 2 三城联动", "duration": "6-8个月", "scope": "许昌/漯河接入+完整联动",
+       "deliverables": "水库-河道-城区联动+集合推演+DQS+基础ML订正", "acceptance": "三城联动时延<5min、超警概率可用",
+       "team": "水利建模1", "hardware": "边缘节点3套"},
+      {"phase": "Phase 3 全域智能化", "duration": "4个月+", "scope": "集合预报/可解释AI/数字孪生/跨部门",
+       "deliverables": "数字孪生回放+复盘+韧性+跨部门交换", "acceptance": "压测达标+可观测全量+灾备演练通过",
+       "team": "ML工程师1", "hardware": "异地备份节点"}
+    ]
+  },
+  "api_spec": {
+    "auth": "OAuth2 Client Credentials / JWT, scope 控权",
+    "rate_limit": "令牌桶 100 req/s/客户端, 突发200",
+    "idempotency": "Idempotency-Key 头",
+    "webhook": "预警事件 POST 回调 + 签名校验 + 重试退避",
+    "error_codes": {
+      "0": "成功", "4001": "参数缺失/非法", "4003": "幂等键冲突",
+      "4010": "未授权/令牌失效", "4030": "无scope权限", "4290": "触发限流",
+      "5001": "引擎内部异常", "5030": "降级模式(数据源中断)"
+    }
+  }
+}
