@@ -3,6 +3,10 @@
 > 河南省中东部（郑州 — 许昌 — 漯河）防汛与台风极端降雨监控预警系统
 > 一套面向**教学 / 原型 / 架构参考**的完整实现：系统设计方案 + Python 算法引擎 + 可交互 Demo。
 
+> 语言 / Language：**[中文](./README.md)** · **[English](./README.en.md)** · **[参与贡献](./CONTRIBUTING.md)**
+
+> 在线演示 / Live Demo：**[https://ctrl-master.github.io/henan-flood-early-warning/](https://ctrl-master.github.io/henan-flood-early-warning/)**（GitHub Pages 自动发布 `demo/`）
+
 ---
 
 ## 先说清楚：这是什么，不是什么
