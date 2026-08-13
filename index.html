@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>河南省中东部防汛与台风极端降雨监控预警系统</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="vendor/leaflet.css" />
     <style>
         /* ========== 全局变量 ========== */
         :root {
@@ -552,7 +551,7 @@
             background: #0d1117 !important;
         }
         .leaflet-tile {
-            filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.9);
+            /* 保留自然配色，避免备用瓦片（高德/OSM）被反色成怪色 */
         }
         .leaflet-control-attribution {
             display: none !important;
@@ -1369,8 +1368,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="vendor/leaflet.js"></script>
+    <script src="vendor/echarts.min.js"></script>
     <script>
         // ========================================
         // 模拟数据
@@ -1445,9 +1444,30 @@
                 attributionControl: false
             });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 18
-            }).addTo(map);
+            // 底图瓦片：多级备用源（OSM → CartoDB → 高德）。
+            // 任意一级加载失败自动切下一级；全部失败则保留暗色面板 + 标记点（优雅降级）。
+            const TILE_SOURCES = [
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
+            ];
+            const TILE_SUBDOMAINS = ['abc', 'abcd', '1234'];
+            let tileIdx = 0;
+            let tileLayer;
+            function addTileSource(i) {
+                tileLayer = L.tileLayer(TILE_SOURCES[i], {
+                    subdomains: TILE_SUBDOMAINS[i],
+                    maxZoom: 19
+                }).addTo(map);
+                tileLayer.on('tileerror', function () {
+                    if (tileIdx < TILE_SOURCES.length - 1) {
+                        tileIdx++;
+                        map.removeLayer(tileLayer);
+                        addTileSource(tileIdx);
+                    }
+                });
+            }
+            addTileSource(0);
 
             L.control.zoom({position: 'topright'}).addTo(map);
             
